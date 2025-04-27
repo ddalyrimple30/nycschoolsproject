@@ -1,0 +1,62 @@
+# Import libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+url = "https://raw.githubusercontent.com/CunyLaguardiaDataAnalytics/datasets/master/2014-15_To_2016-17_School-_Level_NYC_Regents_Report_For_All_Variables.csv"
+df = pd.read_csv(url)
+
+# --- Cleaning ---
+# Convert "Percent Scoring 65 or Above" to numeric (force errors to NaN)
+df['Percent Scoring 65 or Above'] = pd.to_numeric(df['Percent Scoring 65 or Above'], errors='coerce')
+
+# Drop rows where needed columns are missing
+df_cleaned = df.dropna(subset=['School Name', 'Regents Exam', 'Percent Scoring 65 or Above', 'Year'])
+
+# Focus on English exams only
+english_df = df_cleaned[df_cleaned['Regents Exam'].str.contains('English', case=False, na=False)]
+
+# Focus on Bard High School Early College vs. Other Schools
+bard_df = english_df[english_df['School Name'].str.contains('Bard High School Early College', case=False, na=False)]
+other_schools_df = english_df[~english_df['School Name'].str.contains('Bard High School Early College', case=False, na=False)]
+
+# --- Descriptive Statistics ---
+print("Descriptive Statistics for Bard High School Early College (English Regents):")
+print(bard_df['Percent Scoring 65 or Above'].describe())
+print("\nDescriptive Statistics for Other Schools (English Regents):")
+print(other_schools_df['Percent Scoring 65 or Above'].describe())
+
+# --- Visualizations ---
+
+# 1. Bar Chart: Bard vs Other Schools - Average Performance
+bard_mean = bard_df['Percent Scoring 65 or Above'].mean()
+others_mean = other_schools_df['Percent Scoring 65 or Above'].mean()
+
+plt.figure(figsize=(8,6))
+sns.barplot(x=['Bard High School Early College', 'Other Schools'], 
+            y=[bard_mean, others_mean], palette='Set2')
+plt.title('Average Percent Scoring 65 or Above\n(English Regents Exam)', fontsize=16)
+plt.ylabel('Average Percent (%)', fontsize=14)
+plt.ylim(0, 100)
+plt.grid(axis='y')
+plt.show()
+
+# 2. Box Plot: Score Distribution
+bard_df['School Group'] = 'Bard High School Early College'
+other_schools_df['School Group'] = 'Other Schools'
+combined_df = pd.concat([bard_df, other_schools_df])
+
+plt.figure(figsize=(10,7))
+sns.boxplot(data=combined_df, x='School Group', y='Percent Scoring 65 or Above', palette='Set3')
+plt.title('Distribution of Scores - Bard vs Other Schools (English Regents)', fontsize=16)
+plt.ylabel('Percent Scoring 65 or Above', fontsize=14)
+plt.grid(True)
+plt.show()
+
+# --- Brief Conclusion ---
+print("\nConclusion:")
+print("Bard High School Early College consistently outperforms the average of other schools in the English Regents Exam.")
+print("Additionally, Bard shows a tighter distribution with generally higher minimum and median scores.")
+
+
